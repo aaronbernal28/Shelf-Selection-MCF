@@ -1,25 +1,23 @@
 #ifndef TASK_MANAGER_H
 #define TASK_MANAGER_H
 
-#include <map>
-#include <vector>
-#include <string>
-#include "task.h"
-#include "order.h"
+#include "types.h"
 
-namespace ShelfSelection {
+namespace SS {
 
 /**
  * @brief Manages task execution and pending tasks
  */
 class TaskManager {
 public:
-    // Constructors, Destructor, Main operations and Configuration
+    void process_tasks(Taskpool &taskpool);
+    Taskpool get_pending_tasks() const;
     
 private:
-    // Member variables
+    int seed_;
+    Taskpool last_taskpool_;
 };
 
-} // namespace ShelfSelection
+}
 
 #endif // TASK_MANAGER_H
