@@ -1,6 +1,10 @@
 #include "../include/publisher.h"
 #include <fstream>
+#include <thread>
 #include <nlohmann/json.hpp>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 namespace SS {
 
@@ -37,21 +41,37 @@ void Publisher::read_backlog_from_file() {
     }
 
     nlohmann::json json_data;
-    file >> json_data;
-
+    file >> json_data;  // Read the JSON from the file
+    
     // Parse orders
     if (json_data.contains("orders")) {
         for (const auto &order_json : json_data["orders"]) {
-            Order order;
-            order.order_id = order_json["order_id"].get<std::string>();
-            order.item_id = order_json["item_id"].get<std::string>();
-            order.quantity = order_json["quantity"].get<int>();
-            order.creation_date = order_json["creation_date"].get<std::string>();
-            order.due_date = order_json["due_date"].get<std::string>();
+            std::string creation_date_str = order_json["creation_date"].get<std::string>();
+            std::string due_date_str = order_json["due_date"].get<std::string>();
+            
+            TimePoint creation_date = parse_iso8601_date(creation_date_str);
+            TimePoint due_date = parse_iso8601_date(due_date_str);
+            
+            Order order{
+                order_json["order_id"].get<std::string>(),
+                order_json["item_id"].get<std::string>(),
+                order_json["quantity"].get<int>(),
+                creation_date,
+                due_date
+            };
             
             this->backlog_.push_back(order);
         }
     }
+}
+
+// Helper function to convert TimePoint to ISO8601 string
+std::string format_iso8601(const TimePoint& tp) {
+    auto time = std::chrono::system_clock::to_time_t(tp);
+    std::tm tm = *std::localtime(&time);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
 }
 
 void Publisher::publish() {
@@ -67,19 +87,23 @@ void Publisher::publish() {
         TimePoint simulation_date;
 
         for (const auto &order : backlog_) {
-            auto elapsed_time = TimePoint::now() - this->simulation_start_date_;
+            auto elapsed_time = std::chrono::system_clock::now() - this->simulation_start_date_;
             elapsed_time *= this->speed_up_factor_;
             simulation_date = this->start_date_ + elapsed_time;
             if (order.creation_date >= simulation_date) {
+                // Convert timestamps to strings for database insertion
+                std::string creation_date_str = format_iso8601(order.creation_date);
+                std::string due_date_str = format_iso8601(order.due_date);
+                
                 // Insert order into database
                 txn.exec_params(
-                    "INSERT INTO orders (order_id, item_id, quantity, creation_date, due_date) "
+                    "INSERT INTO backlog (order_id, item_id, quantity, creation_date, due_date) "
                     "VALUES ($1, $2, $3, $4, $5)",
                     order.order_id,
                     order.item_id,
                     order.quantity,
-                    order.creation_date,
-                    order.due_date
+                    creation_date_str,
+                    due_date_str
                 );
             } else {
                 // Sleep for a short duration before checking again
@@ -101,4 +125,40 @@ std::string Publisher::build_connection_string() const {
            " host=" + this->db_host_ + 
            " port=" + this->db_port_;
 }
+
+TimePoint Publisher::parse_iso8601_date(const std::string& date_str) const {
+    std::tm tm = {};
+    std::istringstream ss(date_str);
+    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+    
+    if (ss.fail()) {
+        throw std::runtime_error("Failed to parse date string: " + date_str);
+    }
+    
+    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
+}
+
+}  // namespace SS
+
+// Helper function for main (outside namespace)
+SS::TimePoint parse_iso8601_for_main(const std::string& date_str) {
+    std::tm tm = {};
+    std::istringstream ss(date_str);
+    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+    
+    if (ss.fail()) {
+        throw std::runtime_error("Failed to parse date string: " + date_str);
+    }
+    
+    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
+}
+
+int main() {
+    SS::TimePoint start_time = parse_iso8601_for_main("2025-10-09T00:00:00.000000");
+    SS::TimePoint end_time = start_time + std::chrono::hours(24) + std::chrono::minutes(10);
+    SS::TimePoint sim_start = std::chrono::system_clock::now();
+    SS::Publisher publisher(1, start_time, end_time, sim_start, "data/raw/backlog.json");
+    publisher.read_backlog_from_file();
+    publisher.publish();
+    return 0;
 }

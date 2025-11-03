@@ -5,6 +5,8 @@
 #include <vector>
 #include "order.h"
 #include <pqxx/pqxx> // PostgreSQL C++ library
+#include "types.h"
+#include <chrono>
 
 namespace SS {
 
@@ -16,9 +18,9 @@ public:
     // Constructor with optional speed-up factor
     Publisher(
         int speed_up_factor = 1,
-        const TimePoint& start_date = TimePoint("2025-10-09T00:00:00.000000"),
-        const TimePoint& end_date = TimePoint("2025-10-10T00:10:00.000000"), // 24 hours + 10 minutes
-        const TimePoint& simulation_start_date = TimePoint::now(), // Real-world start time
+        TimePoint start_date = TimePoint(),
+        TimePoint end_date = TimePoint(),
+        TimePoint simulation_start_date = TimePoint(),
         const std::string& backlog_file_path = "../data/raw/backlog.json",
         const std::string& dbname = "my_MCF_db",
         const std::string& db_user = "aaron",
@@ -40,13 +42,16 @@ public:
     // Publish orders to the database
     void publish();
 
+    // Parse ISO 8601 date string to TimePoint
+    TimePoint parse_iso8601_date(const std::string& date_str) const;
+
     std::vector<Order> get_backlog() const { return backlog_; }
     
 private:
     const int speed_up_factor_;
-    const TimePoint& start_date_;
-    const TimePoint& end_date_;
-    const TimePoint& simulation_start_date_;
+    TimePoint start_date_;
+    TimePoint end_date_;
+    TimePoint simulation_start_date_;
     std::vector<Order> backlog_;
     const std::string backlog_file_path_;
     const std::string dbname_;
