@@ -1,7 +1,7 @@
 #include "../include/shelf_selection.h"
 
-namespace ShelfSelection {
+namespace SS {
 
 // Implementation will go here
 
-} // namespace ShelfSelection
+}

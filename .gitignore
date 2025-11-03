@@ -62,3 +62,5 @@ data/raw/*.json
 # OS files
 .DS_Store
 Thumbs.db
+
+tests/*

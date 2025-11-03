@@ -1,6 +1,7 @@
 #ifndef ORDER_H
 #define ORDER_H
 
+#include <map>
 #include "types.h"
 
 namespace SS {
@@ -8,6 +9,16 @@ namespace SS {
 /**
  * @brief Represents an order in the shelf selection system
  */
+
+// Status definitions
+constexpr const char* PENDING = "Pending";
+constexpr const char* PROCESSING = "Processing";
+constexpr const char* COMPLETED = "Completed";
+constexpr const char* EXPIRED = "Expired";
+
+enum class OrderStatus { PENDING, PROCESSING, COMPLETED, EXPIRED };
+
+// Order structure
 struct Order
 {
     const OrderID order_id;
@@ -19,8 +30,8 @@ struct Order
     OrderStatus status = OrderStatus::PENDING;
 };
 
+// Map of OrderID to Order
 using Orders = std::map<OrderID, Order>;
-
 }
 
 #endif // ORDER_H

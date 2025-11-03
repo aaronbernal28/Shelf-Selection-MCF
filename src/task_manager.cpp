@@ -1,7 +1,7 @@
 #include "../include/task_manager.h"
 
-namespace ShelfSelection {
+namespace SS {
 
 // Implementation will go here
 
-} // namespace ShelfSelection
+}

@@ -14,20 +14,9 @@ using ItemID = std::string; // e.g., 0N9X97RYEKKHWE1, LXJY4YBSWCX3KBF, etc.
 using OrderID = std::string; // e.g., ORD_013387_LXJY4YBS_000, ORD_013387_LXJY4YBS_001, etc.
 using TimePoint = std::chrono::system_clock::time_point;
 
-// Define a Location as a pair of RackID and FaceID in the storage system
-using Location = std::pair<RackID, FaceID>;
-
-// Map from Location to list of OrderIDs assigned there
-using Taskpool = std::map<Location, std::vector<OrderID>>;
-
-// Status definitions
-// Order Status
-constexpr const char* PENDING = "Pending";
-constexpr const char* IN_PROCESSES = "In_Processes";
-constexpr const char* COMPLETED = "Completed";
-constexpr const char* EXPIRED = "Expired";
-
-enum class OrderStatus { PENDING, IN_PROCESSES, COMPLETED, EXPIRED };
-} // namespace SS
+// Map from RackID and FaceID to list of OrderIDs assigned there
+using Taskpool = std::map<RackID, std::map<FaceID, std::vector<OrderID>>>;
+using Stock = std::map<RackID, std::map<FaceID, std::map<ItemID, int>>>;
+}
 
 #endif // TYPES_H

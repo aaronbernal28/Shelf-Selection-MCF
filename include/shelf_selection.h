@@ -1,11 +1,8 @@
 #ifndef SHELF_SELECTOR_H
 #define SHELF_SELECTOR_H
 
-#include <string>
 #include <vector>
-#include <map>
 #include "order.h"
-#include "types.h"
 #include "stock.h"
 
 namespace SS {
@@ -16,19 +13,16 @@ namespace SS {
 class ShelfSelection {
 public:
     // Constructor
-    ShelfSelection(Stock& stock, TimePoint stat_time): stock_(stock), stat_time_(stat_time) {}
+    ShelfSelection(StockManager& stock, TimePoint stat_time): stock_(stock), stat_time_(stat_time), rack_tibios_max_(0) {}
     
     // Main method
     Taskpool run(const std::vector<Order>& orders);
     
 private:
     // Member variables
-    Stock& stock_;
+    StockManager& stock_;
     TimePoint stat_time_;
-    std::map<RackID, RackStatus> rack_status_map_;
-    std::vector<RackID> rack_tibios_;
     int rack_tibios_max_;
-
 };
 
 }

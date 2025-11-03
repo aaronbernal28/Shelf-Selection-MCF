@@ -10,12 +10,14 @@ namespace SS {
  */
 class TaskManager {
 public:
-    void process_tasks(Taskpool &taskpool);
-    Taskpool get_pending_tasks() const;
-    
+    // Constructor
+    TaskManager(int seed);
+
+    // Process tasks in the taskpool
+    Taskpool process_tasks(Taskpool &taskpool);
+
 private:
     int seed_;
-    Taskpool last_taskpool_;
 };
 
 }
