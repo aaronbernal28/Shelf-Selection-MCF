@@ -34,6 +34,9 @@ private:
     std::string db_port_;
     std::string db_password_;
     
+    // Load .env file into environment
+    void load_env_file();
+    
     // Load configuration from environment variables
     void load_env_config();
 };

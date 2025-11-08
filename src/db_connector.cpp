@@ -1,11 +1,41 @@
 #include "db_connector.h"
 #include <cstdlib>
 #include <stdexcept>
+#include <fstream>
+#include <sstream>
 
 namespace SS {
 
 DBConnector::DBConnector() {
+    load_env_file();
     load_env_config();
+}
+
+void DBConnector::load_env_file() {
+    std::ifstream env_file(".env");
+    if (!env_file.is_open()) {
+        return; // No .env file found, will try environment variables
+    }
+    
+    std::string line;
+    while (std::getline(env_file, line)) {
+        // Skip empty lines and comments
+        if (line.empty() || line[0] == '#') {
+            continue;
+        }
+        
+        // Parse KEY=VALUE
+        size_t eq_pos = line.find('=');
+        if (eq_pos != std::string::npos) {
+            std::string key = line.substr(0, eq_pos);
+            std::string value = line.substr(eq_pos + 1);
+            
+            // Only set if not already in environment
+            if (!std::getenv(key.c_str())) {
+                setenv(key.c_str(), value.c_str(), 0);
+            }
+        }
+    }
 }
 
 void DBConnector::load_env_config() {
@@ -18,7 +48,7 @@ void DBConnector::load_env_config() {
     if (!env_dbname || !env_user || !env_host || !env_port) {
         throw std::runtime_error(
             "Database environment variables not set. "
-            "Please set DB_NAME, DB_USER, DB_HOST, and DB_PORT"
+            "Please set DB_NAME, DB_USER, DB_HOST, and DB_PORT in .env file or environment"
         );
     }
     

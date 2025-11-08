@@ -1,6 +1,5 @@
 CREATE TABLE backlog (
-	id SERIAL PRIMARY KEY,
-	order_id CHAR(25),
+	order_id CHAR(25) PRIMARY KEY,
 	item_id CHAR(17),
 	quantity INTEGER DEFAULT 1,
 	creation_date TIMESTAMP,

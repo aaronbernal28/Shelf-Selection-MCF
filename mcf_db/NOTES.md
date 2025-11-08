@@ -22,7 +22,7 @@ psql -d <env.DB_NAME>
 ### Create the main Table Backlog
 Run `schema.sql` to create the main table `backlog`:
 ```bash
-psql -d <env.DB_NAME> -f schema.sql
+psql -d <env.DB_NAME> -f mcf_db/schema.sql
 ```
 
 ### Verify Table Creation

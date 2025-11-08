@@ -62,29 +62,32 @@ Check `mcf_db/NOTES.md` for instructions on initializing the PostgreSQL database
 
 ### 3. Build
 
-**Build WMS:**
+**Build WMS (Warehouse Management System):**
 ```bash
-cd WMS
-mkdir build && cd build
-cmake ..
+mkdir build/WMS
+cd build/WMS
+cmake ../../WMS
 make
 ```
 
-**Build WES:**
+**Build WES (Warehouse Execution System):**
 ```bash
-cd WES
-mkdir build && cd build
-cmake ..
+mkdir build/WES
+cd build/WES
+cmake ../../WES
 make
 ```
 
 ### 4. Run
 ```bash
-# From WMS/build/
-./wms
+# Run from project root (so .env and data/ paths are accessible)
+cd ../..
 
-# From WES/build/
-./wes
+# Run WMS
+./build/WMS/wms
+
+# Run WES
+./build/WES/wes
 ```
 
 ## Components

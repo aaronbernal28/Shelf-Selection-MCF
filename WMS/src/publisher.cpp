@@ -5,6 +5,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
 
 namespace SS {
 
@@ -23,31 +24,7 @@ Publisher::Publisher(
 }
 
 void Publisher::read_backlog_from_file() {
-    // Implementation for reading the backlog from a file
-    // For example json:
-    /*
-{
-  "metadata": {
-    "cpt_hours": [...]
-  },
-  "orders": [
-    {
-      "order_id": "ORD_013387_LXJY4YBS_000",
-      "item_id": "LXJY4YBSWCX3KBF",
-      "quantity": 1,
-      "creation_date": "2025-10-09T00:00:04.885077",
-      "due_date": "2025-10-09T21:00:00.885077"
-    },
-    {
-      "order_id": "ORD_013387_LXJY4YBS_001",
-      "item_id": "LXJY4YBSWCX3KBF",
-      "quantity": 1,
-      "creation_date": "2025-10-09T00:00:04.885077",
-      "due_date": "2025-10-09T06:00:00.885077"
-    }
-    ]
-}
-    */
+    // Implementation for reading the backlog from a json file
     std::ifstream file(backlog_file_path_);
     
     if (!file.is_open()) {
@@ -91,8 +68,11 @@ std::string format_iso8601(const TimePoint& tp) {
 void Publisher::publish() {
     // Implementation for publishing an order to the database
     try {
+        std::cout << "Publisher starting with " << backlog_.size() << " orders in backlog" << std::endl;
+        
         // Connect to the database using DBConnector
         pqxx::connection conn = db_connector_.connect();
+        std::cout << "Database connected successfully" << std::endl;
 
         // Start a transaction
         pqxx::work txn(conn);
@@ -100,31 +80,47 @@ void Publisher::publish() {
         // Calculate simulation time
         TimePoint simulation_date;
 
+        int published_count = 0;
         for (const auto &order : backlog_) {
+            std::cout << "Checking order " << order.order_id << std::endl;
+            while (true)
+            {
             auto elapsed_time = std::chrono::system_clock::now() - this->simulation_start_date_;
             elapsed_time *= this->speed_up_factor_;
             simulation_date = this->start_date_ + elapsed_time;
-            if (order.creation_date >= simulation_date) {
+            
+            //std::cout << "  Order creation: " << format_iso8601(order.creation_date) << std::endl;
+            //std::cout << "  Simulation date: " << format_iso8601(simulation_date) << std::endl;
+            //std::cout << "  Condition (creation <= sim): " << (order.creation_date <= simulation_date) << std::endl;
+            
+            if (order.creation_date <= simulation_date) {
                 // Convert timestamps to strings for database insertion
                 std::string creation_date_str = format_iso8601(order.creation_date);
                 std::string due_date_str = format_iso8601(order.due_date);
                 
                 // Insert order into database
-                txn.exec_params(
+                txn.exec(
                     "INSERT INTO backlog (order_id, item_id, quantity, creation_date, due_date) "
                     "VALUES ($1, $2, $3, $4, $5)",
-                    order.order_id,
-                    order.item_id,
-                    order.quantity,
-                    creation_date_str,
-                    due_date_str
+                    pqxx::params(
+                        order.order_id,
+                        order.item_id,
+                        order.quantity,
+                        creation_date_str,
+                        due_date_str
+                    )
                 );
+                published_count++;
+                std::cout << "  -> Order published!" << std::endl;
+                break; // Exit the while loop to proceed to the next order
             } else {
                 // Sleep for a short duration before checking again
                 std::this_thread::sleep_for(std::chrono::milliseconds(1000 / this->speed_up_factor_));
             }
+            }
         }
         
+        std::cout << "Published " << published_count << " orders total" << std::endl;
         txn.commit(); // Commit the transaction
         conn.close(); // Close the connection
 
@@ -146,17 +142,3 @@ TimePoint Publisher::parse_iso8601_date(const std::string& date_str) const {
 }
 
 }  // namespace SS
-
-// Helper function for main (outside namespace)
-SS::TimePoint parse_iso8601_for_main(const std::string& date_str) {
-    std::tm tm = {};
-    std::istringstream ss(date_str);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-    
-    if (ss.fail()) {
-        throw std::runtime_error("Failed to parse date string: " + date_str);
-    }
-    
-    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
-}
-
