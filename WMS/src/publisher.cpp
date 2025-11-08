@@ -8,6 +8,20 @@
 
 namespace SS {
 
+Publisher::Publisher(
+    int speed_up_factor,
+    TimePoint start_date,
+    TimePoint end_date,
+    TimePoint simulation_start_date,
+    const std::string& backlog_file_path)
+: speed_up_factor_(speed_up_factor), 
+  start_date_(start_date),
+  end_date_(end_date),
+  simulation_start_date_(simulation_start_date),
+  backlog_file_path_(backlog_file_path),
+  db_connector_() {
+}
+
 void Publisher::read_backlog_from_file() {
     // Implementation for reading the backlog from a file
     // For example json:
@@ -77,8 +91,8 @@ std::string format_iso8601(const TimePoint& tp) {
 void Publisher::publish() {
     // Implementation for publishing an order to the database
     try {
-        // Connect to the database
-        pqxx::connection conn(build_connection_string());
+        // Connect to the database using DBConnector
+        pqxx::connection conn = db_connector_.connect();
 
         // Start a transaction
         pqxx::work txn(conn);
@@ -117,13 +131,6 @@ void Publisher::publish() {
     } catch (const std::exception &e) {
         throw std::runtime_error("Failed to publish orders: " + std::string(e.what()));
     }
-}
-
-std::string Publisher::build_connection_string() const {
-    return "dbname=" + this->dbname_ + 
-           " user=" + this->db_user_ + 
-           " host=" + this->db_host_ + 
-           " port=" + this->db_port_;
 }
 
 TimePoint Publisher::parse_iso8601_date(const std::string& date_str) const {

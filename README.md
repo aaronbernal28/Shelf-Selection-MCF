@@ -6,99 +6,106 @@ C++ implementation of a Shelf Selection optimization system using Minimum Cost F
 
 ```
 Shelf-Selection-MCF/
-├── include/              # Header files (.h) - Class declarations
-│   ├── order.h          # Order class
-│   ├── task.h           # Task class
-│   ├── publisher.h      # Publisher (order queue manager)
-│   ├── shelf_selection.h # Core MCF optimization
-│   └── task_manager.h   # Task execution manager
-├── src/                 # Implementation files (.cpp)
-│   ├── main.cpp         # Entry point + main simulation logic
-│   ├── order.cpp        # Order implementation
-│   ├── task.cpp         # Task implementation
-│   ├── publisher.cpp    # Publisher implementation
-│   ├── shelf_selection.cpp # Shelf selector implementation
-│   └── task_manager.cpp # Task manager implementation
-├── tests/               # Unit tests
-│   ├── test_order.cpp   # Order class tests
-│   ├── test_task.cpp    # Task class tests
-│   ├── test_publisher.cpp # Publisher tests
-│   └── README.md        # Test documentation
+├── src/                    # Shared source files
+│   ├── order.cpp/h         # Order data structure
+│   ├── db_connector.cpp/h  # Database connection management
+│   ├── rack.h              # Warehouse rack definitions
+│   └── types.h             # Common type definitions
+├── WMS/                    # Warehouse Management System
+│   ├── src/
+│   │   ├── wms.cpp         # WMS main entry point
+│   │   └── publisher.cpp/h # Order publisher to database
+│   └── CMakeLists.txt
+├── WES/                    # Warehouse Execution System
+│   ├── src/
+│   │   ├── wes.cpp                 # WES main entry point
+│   │   ├── shelf_selection.cpp/h   # Shelf selection logic
+│   │   ├── stock.cpp/h             # Stock management
+│   │   └── task_manager.cpp/h      # Task execution
+│   ├── include/                    # WES headers
+│   └── CMakeLists.txt
 ├── data/
-│   ├── raw/            # Input data (backlog.json, stock.json)
+│   ├── raw/            # Input data (backlog.json)
 │   └── output/         # Simulation results
-├── my_MCF_db/          # Database schema and examples
-│   ├── schema.sql      # PostgreSQL database schema
-│   ├── insert_example.sql
-│   └── NOTES.md
-├── CMakeLists.txt      # CMake build configuration
-├── Makefile            # Convenience makefile wrapper
-├── build.sh            # Build automation script
-├── BUILD_GUIDE.md      # Quick reference for building
-└── README.md           # This file
+├── my_MCF_db/          # Database schema
+│   └── schema.sql
+└── example.env         # Environment configuration template
 ```
 
 ## Dependencies
 
-### Required
-- **C++17 compiler** (GCC 7+ or Clang 5+)
+- **C++17** compiler (GCC 7+ or Clang 5+)
 - **CMake** 3.10+
 - **nlohmann-json** 3.2.0+ - JSON parsing
 - **libpqxx** - PostgreSQL C++ client
-- **PostgreSQL** 12+ - Database
+- **PostgreSQL** - Database
 
-### Optional
-- **OR-Tools** - Google's optimization tools
-
-## Quick Start
-
-### 1. Install Dependencies
+Install on Ubuntu/Debian:
 ```bash
-./build.sh deps
+sudo apt-get install build-essential cmake nlohmann-json3-dev libpq-dev libpqxx-dev pkg-config
 ```
+
+## Setup
+
+### 1. Configure Environment
+Create a `.env` file based on `example.env` with your database credentials.
+
+Required environment variables:
+- `DB_NAME` - Database name
+- `DB_USER` - Database user
+- `DB_HOST` - Database host
+- `DB_PORT` - Database port
+- `DB_PASSWORD` - Database password (optional)
 
 ### 2. Setup Database
-```bash
-# Create database
-sudo -u postgres psql -c "CREATE DATABASE my_MCF_db;"
-sudo -u postgres psql -c "CREATE USER aaron WITH PASSWORD 'password';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE my_MCF_db TO aaron;"
-
-# Initialize schema
-psql -U aaron -d my_MCF_db -f my_MCF_db/schema.sql
-```
+Check `mcf_db/NOTES.md` for instructions on initializing the PostgreSQL database schema.
 
 ### 3. Build
+
+**Build WMS:**
 ```bash
-./build.sh build
+cd WMS
+mkdir build && cd build
+cmake ..
+make
+```
+
+**Build WES:**
+```bash
+cd WES
+mkdir build && cd build
+cmake ..
+make
 ```
 
 ### 4. Run
 ```bash
-./build.sh run-publisher  # Publish orders to database
-./build.sh run-main       # Run main application
-./build.sh run-tests      # Run tests
+# From WMS/build/
+./wms
+
+# From WES/build/
+./wes
 ```
 
-## Build Commands
+## Components
 
-See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed build instructions.
+**WMS (Warehouse Management System)**
+- Reads order backlog from JSON (`data/raw/backlog.json`)
+- Publishes orders to PostgreSQL database
+- Simulates order arrival with configurable speed-up factor
 
-**Common commands:**
-```bash
-./build.sh build          # Build everything
-./build.sh main           # Build main only
-./build.sh publisher      # Build publisher only
-./build.sh tests          # Build tests
-./build.sh clean          # Clean build
-./build.sh --debug build  # Debug build
-```
+**WES (Warehouse Execution System)**
+- Consumes orders from database
+- Performs shelf selection optimization
+- Manages stock and task execution
 
-## Data Files
+**DBConnector** (shared)
+- Centralized database connection management
+- Loads configuration from environment variables
 
-Place JSON data files in `data/raw/`:
+## Data Format
 
-**backlog.json** - Order backlog:
+Orders in `data/raw/backlog.json`:
 ```json
 {
   "orders": [
@@ -111,25 +118,5 @@ Place JSON data files in `data/raw/`:
     }
   ]
 }
-```
-
-**stock.json** - Warehouse configuration
-
-## Architecture
-
-Core components in the `SS` namespace:
-
-- **Order**: Customer order with item, quantity, dates
-- **Task**: Grouped orders for picking
-- **Publisher**: Publishes orders to PostgreSQL from JSON backlog
-- **ShelfSelector**: MCF-based optimization for shelf selection
-- **TaskManager**: Task execution management
-- **Stock/Rack**: Warehouse structure
-
-## Troubleshooting
-
-**Missing dependencies:**
-```bash
-sudo apt-get install nlohmann-json3-dev libpq-dev libpqxx-dev pkg-config
 ```
 

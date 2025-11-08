@@ -6,6 +6,7 @@
 #include "order.h"
 #include <pqxx/pqxx> // PostgreSQL C++ library
 #include "types.h"
+#include "db_connector.h"
 #include <chrono>
 
 namespace SS {
@@ -21,20 +22,10 @@ public:
         TimePoint start_date = TimePoint(),
         TimePoint end_date = TimePoint(),
         TimePoint simulation_start_date = TimePoint(),
-        const std::string& backlog_file_path = "../data/raw/backlog.json",
-        const std::string& dbname = "my_MCF_db",
-        const std::string& db_user = "aaron",
-        const std::string& db_host = "localhost",
-        const std::string& db_port = "5432")
-    : speed_up_factor_(speed_up_factor), 
-    start_date_(start_date),
-    end_date_(end_date),
-    simulation_start_date_(simulation_start_date),
-    backlog_file_path_(backlog_file_path), 
-    dbname_(dbname), 
-    db_user_(db_user), 
-    db_host_(db_host), 
-    db_port_(db_port) {}
+        const std::string& backlog_file_path = "../data/raw/backlog.json");
+    
+    // Default constructor
+    Publisher() : Publisher(1) {}
     
     // Generate backlog_ from a file
     void read_backlog_from_file();
@@ -54,13 +45,7 @@ private:
     TimePoint simulation_start_date_;
     std::vector<Order> backlog_;
     const std::string backlog_file_path_;
-    const std::string dbname_;
-    const std::string db_user_;
-    const std::string db_host_;
-    const std::string db_port_;
-    
-    // Helper method to build connection string
-    std::string build_connection_string() const;
+    DBConnector db_connector_;
 };
 
 }
