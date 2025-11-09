@@ -35,3 +35,9 @@ To view the contents of the `backlog` table, you can run:
 ```bash
 psql -d <env.DB_NAME> -c "SELECT * FROM backlog;"
 ```
+
+### Clean table Backlog
+To delete all records from the `backlog` table, use:
+```bash
+psql -d <env.DB_NAME> -c "TRUNCATE TABLE backlog;"
+```

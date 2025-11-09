@@ -65,3 +65,6 @@ Thumbs.db
 
 tests/*
 .env
+data/raw/backlog.json:Zone.Identifier
+data/raw/stock.json:Zone.Identifier
+build/*

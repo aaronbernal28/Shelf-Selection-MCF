@@ -1,6 +1,7 @@
 #include "publisher.h"
 #include <fstream>
 #include <thread>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <sstream>
@@ -74,13 +75,16 @@ void Publisher::publish() {
         pqxx::connection conn = db_connector_.connect();
         std::cout << "Database connected successfully" << std::endl;
 
-        // Start a transaction
-        pqxx::work txn(conn);
-
         // Calculate simulation time
         TimePoint simulation_date;
 
         int published_count = 0;
+        int batch_count = 0;
+        const int BATCH_SIZE = 1000; // Commit every 1000 orders
+        
+        // Use a unique_ptr for transaction management
+        std::unique_ptr<pqxx::work> txn = std::make_unique<pqxx::work>(conn);
+        
         for (const auto &order : backlog_) {
             std::cout << "Checking order " << order.order_id << std::endl;
             while (true)
@@ -99,7 +103,7 @@ void Publisher::publish() {
                 std::string due_date_str = format_iso8601(order.due_date);
                 
                 // Insert order into database
-                txn.exec(
+                txn->exec(
                     "INSERT INTO backlog (order_id, item_id, quantity, creation_date, due_date) "
                     "VALUES ($1, $2, $3, $4, $5)",
                     pqxx::params(
@@ -111,7 +115,17 @@ void Publisher::publish() {
                     )
                 );
                 published_count++;
-                std::cout << "  -> Order published!" << std::endl;
+                batch_count++;
+                //std::cout << "  -> Order published! (Total: " << published_count << ")" << std::endl;
+                
+                // Commit in batches to avoid losing all data on interruption
+                if (batch_count >= BATCH_SIZE) {
+                    txn->commit();
+                    std::cout << "  >> Batch committed (" << published_count << " orders saved)" << std::endl;
+                    txn = std::make_unique<pqxx::work>(conn); // Create new transaction
+                    batch_count = 0;
+                }
+                
                 break; // Exit the while loop to proceed to the next order
             } else {
                 // Sleep for a short duration before checking again
@@ -120,8 +134,13 @@ void Publisher::publish() {
             }
         }
         
+        // Commit any remaining orders in the last batch
+        if (batch_count > 0) {
+            txn->commit();
+            std::cout << "  >> Final batch committed" << std::endl;
+        }
+        
         std::cout << "Published " << published_count << " orders total" << std::endl;
-        txn.commit(); // Commit the transaction
         conn.close(); // Close the connection
 
     } catch (const std::exception &e) {
