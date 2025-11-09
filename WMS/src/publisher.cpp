@@ -4,9 +4,8 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <chrono>
-#include <sstream>
-#include <iomanip>
 #include <iostream>
+#include "utils.h"
 
 namespace SS {
 
@@ -41,8 +40,8 @@ void Publisher::read_backlog_from_file() {
             std::string creation_date_str = order_json["creation_date"].get<std::string>();
             std::string due_date_str = order_json["due_date"].get<std::string>();
             
-            TimePoint creation_date = parse_iso8601_date(creation_date_str);
-            TimePoint due_date = parse_iso8601_date(due_date_str);
+            TimePoint creation_date = parse_iso8601(creation_date_str);
+            TimePoint due_date = parse_iso8601(due_date_str);
             
             Order order{
                 order_json["order_id"].get<std::string>(),
@@ -55,15 +54,6 @@ void Publisher::read_backlog_from_file() {
             this->backlog_.push_back(order);
         }
     }
-}
-
-// Helper function to convert TimePoint to ISO8601 string
-std::string format_iso8601(const TimePoint& tp) {
-    auto time = std::chrono::system_clock::to_time_t(tp);
-    std::tm tm = *std::localtime(&time);
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
-    return oss.str();
 }
 
 void Publisher::publish() {
@@ -146,18 +136,6 @@ void Publisher::publish() {
     } catch (const std::exception &e) {
         throw std::runtime_error("Failed to publish orders: " + std::string(e.what()));
     }
-}
-
-TimePoint Publisher::parse_iso8601_date(const std::string& date_str) const {
-    std::tm tm = {};
-    std::istringstream ss(date_str);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-    
-    if (ss.fail()) {
-        throw std::runtime_error("Failed to parse date string: " + date_str);
-    }
-    
-    return std::chrono::system_clock::from_time_t(std::mktime(&tm));
 }
 
 }  // namespace SS

@@ -21,6 +21,9 @@ set(WES_SOURCES
     src/stock.cpp
     src/task_manager.cpp
     src/shelf_selection.cpp
+    src/order_manager.cpp
+    ../src/utils.cpp
+    ../src/db_connector.cpp
 )
 
 # Create WES library

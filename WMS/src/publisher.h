@@ -33,9 +33,6 @@ public:
     // Publish orders to the database
     void publish();
 
-    // Parse ISO 8601 date string to TimePoint
-    TimePoint parse_iso8601_date(const std::string& date_str) const;
-
     std::vector<Order> get_backlog() const { return backlog_; }
     
 private:

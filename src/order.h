@@ -26,6 +26,7 @@ struct Order
     const int quantity = 1;
     const TimePoint creation_date;
     const TimePoint due_date;
+    int priority = 0;
     TimePoint closure_date = {};
     OrderStatus status = OrderStatus::PENDING;
 };

@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <nlohmann/json_fwd.hpp>
 #include "rack.h"
 
 namespace SS {
@@ -13,35 +14,43 @@ namespace SS {
  */
 class StockManager {
 public:
-    // Constructor
-    StockManager(std::string stock_file_path) : stock_file_path_(stock_file_path) {}
+    // Constructor - loads stock from JSON file
+    StockManager(const std::string& stock_file_path);
 
-    // Adds an item to the stock
-    void add_item(const RackID &rack_id, const FaceID &face_id, const ItemID &item_id, int quantity);
+    // Load and process stock from JSON file
+    void load_stock();
 
-    // Removes an item from the stock
-    void remove_item(const RackID &rack_id, const FaceID &face_id, const ItemID &item_id, int quantity);
+    // Get/Set item quantity at specific location (rack, face, item)
+    int get_item_quantity(const RackID& rack_id, const FaceID& face_id, const ItemID& item_id) const;
+    void set_item_quantity(const RackID& rack_id, const FaceID& face_id, const ItemID& item_id, int quantity);
 
-    // Checks the stock level of an item
-    int check_stock(const RackID &rack_id, const FaceID &face_id, const ItemID &item_id) const;
+    // Get total quantity of an item across all locations
+    int get_total_quantity(const ItemID& item_id) const;
 
-    // Getters for the stock locations, racks, and faces
+    // Get all items at a specific rack and face
+    std::vector<ItemID> get_items(const RackID& rack_id, const FaceID& face_id) const;
+
+    // Get all rack IDs in inventory
     std::vector<RackID> get_racks() const;
-    std::vector<FaceID> get_faces() const;
+
+    // Get the entire stock structure
+    const Stock& get_inventory() const { return inventory_; }
+
+    // Stock out items
+    std::vector<ItemID> stock_out_items_;
 
 private:
-    // Map to hold the stock availability of items
-    Stock stock_;
+    // Nested map structure: rack -> face -> item -> quantity
+    Stock inventory_;
 
-    // Map to hold the quantity of each item
-    std::map<ItemID, int> item_quantities_;
+    // Map to hold total quantity of each item across all locations
+    std::map<ItemID, int> items_quantity_;
 
-    // Path to the stock file
+    // Path to the stock JSON file
     std::string stock_file_path_;
 
-    // Vectors to hold the list of racks and faces
-    Racks racks_;
-    std::vector<FaceID> faces_;
+    // Helper to process JSON and populate inventory
+    void process_stock_json(const nlohmann::json& json_data);
 };
 
 }

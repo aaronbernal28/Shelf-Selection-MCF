@@ -19,6 +19,7 @@ include_directories(${PQXX_INCLUDE_DIRS})
 set(WMS_SOURCES
     src/publisher.cpp
     ${PROJECT_SOURCE_DIR}/../src/db_connector.cpp
+    ${PROJECT_SOURCE_DIR}/../src/utils.cpp
 )
 
 # Create WMS library

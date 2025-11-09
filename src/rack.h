@@ -10,7 +10,6 @@ namespace SS {
  */
 struct Rack
 {
-    const RackID rack_id;
     bool is_warm = false; // Indicates if the rack is a warm rack
     bool is_hot = false; // Indicates if the rack is a hot rack
 };

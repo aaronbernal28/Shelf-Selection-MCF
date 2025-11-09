@@ -13,15 +13,17 @@ namespace SS {
 class ShelfSelection {
 public:
     // Constructor
-    ShelfSelection(StockManager& stock, TimePoint stat_time): stock_(stock), stat_time_(stat_time), rack_tibios_max_(0) {}
+    ShelfSelection(StockManager& stock): stock_(stock), rack_tibios_max_(0) {}
     
     // Main method
-    Taskpool run(const std::vector<Order>& orders);
+    Taskpool run(const std::vector<Order>& orders, Taskpool& pending, const int& N);
+
+    // MCF
+    Taskpool solve_mcf(const std::vector<Order>& orders, const int& limit);
     
 private:
     // Member variables
     StockManager& stock_;
-    TimePoint stat_time_;
     int rack_tibios_max_;
 };
 
