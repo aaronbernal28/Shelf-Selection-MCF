@@ -4,6 +4,7 @@
 #include <vector>
 #include "order.h"
 #include "stock.h"
+#include <set>
 
 namespace SS {
 
@@ -13,7 +14,7 @@ namespace SS {
 class ShelfSelection {
 public:
     // Constructor
-    ShelfSelection(StockManager& stock): stock_(stock), rack_tibios_max_(0) {}
+    ShelfSelection(StockManager& stock): stock_(stock) {}
     
     // Main method
     Taskpool run(const std::vector<Order>& orders, Taskpool& pending, const int& N);
@@ -24,7 +25,9 @@ public:
 private:
     // Member variables
     StockManager& stock_;
-    int rack_tibios_max_;
+    std::vector<RackID> warm_racks_;
+    std::set<RackID> hot_racks_;
+    int warm_racks_limit;
 };
 
 }

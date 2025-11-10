@@ -6,6 +6,7 @@
 #include <vector>
 #include <nlohmann/json_fwd.hpp>
 #include "rack.h"
+#include <set>
 
 namespace SS {
 
@@ -27,17 +28,20 @@ public:
     // Get total quantity of an item across all locations
     int get_total_quantity(const ItemID& item_id) const;
 
-    // Get all items at a specific rack and face
-    std::vector<ItemID> get_items(const RackID& rack_id, const FaceID& face_id) const;
-
     // Get all rack IDs in inventory
-    std::vector<RackID> get_racks() const;
+    const std::set<RackID>& get_racks() const { return racks_; }
+
+    // Get all face IDs in inventory
+    const std::set<FaceID>& get_faces() const { return faces_; }
 
     // Get the entire stock structure
     const Stock& get_inventory() const { return inventory_; }
 
     // Stock out items
     std::vector<ItemID> stock_out_items_;
+    
+    std::map<RackID, bool> is_rack_hot_;
+    std::map<RackID, bool> is_rack_warm_;
 
 private:
     // Nested map structure: rack -> face -> item -> quantity
@@ -51,6 +55,9 @@ private:
 
     // Helper to process JSON and populate inventory
     void process_stock_json(const nlohmann::json& json_data);
+
+    std::set<RackID> racks_;
+    std::set<FaceID> faces_;
 };
 
 }

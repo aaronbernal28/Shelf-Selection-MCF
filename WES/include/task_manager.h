@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include <vector>
+#include <random>
 
 namespace SS {
 
@@ -21,8 +22,11 @@ public:
 
     // Placeholder for available capacity retrieval
     int get_available_capacity();
+
 private:
     int seed_;
+    std::uniform_int_distribution<int> dist1; // For pending tasks
+    std::uniform_int_distribution<int> dist2; // For available capacity
 };
 
 }

@@ -9,6 +9,21 @@ StockManager::StockManager(const std::string& stock_file_path)
     : stock_file_path_(stock_file_path) {
     load_stock();
     stock_out_items_ = std::vector<ItemID>();
+    racks_ = std::set<RackID>();
+
+    for (const auto& [rack_id, _] : inventory_) {
+        racks_.insert(rack_id);
+    }
+
+    faces_ = std::set<FaceID>{"Cara_1", "Cara_2", "Cara_3", "Cara_4"};
+
+    is_rack_hot_ = std::map<RackID, bool>();
+    is_rack_warm_ = std::map<RackID, bool>();
+    // Initialize rack status maps as false
+    for (const auto& rack_id : racks_) {
+        is_rack_hot_[rack_id] = false;
+        is_rack_warm_[rack_id] = false;
+    }
 }
 
 void StockManager::load_stock() {
@@ -70,13 +85,11 @@ int StockManager::get_item_quantity(const RackID& rack_id, const FaceID& face_id
 }
 
 void StockManager::set_item_quantity(const RackID& rack_id, const FaceID& face_id, const ItemID& item_id, int quantity) {
-    int old_value = get_item_quantity(rack_id, face_id, item_id);
-    
     // Update the inventory
     inventory_[rack_id][face_id][item_id] += quantity;
     
     // Update total quantity
-    items_quantity_[item_id] += (quantity - old_value);
+    items_quantity_[item_id] += quantity;
 }
 
 int StockManager::get_total_quantity(const ItemID& item_id) const {
@@ -85,33 +98,6 @@ int StockManager::get_total_quantity(const ItemID& item_id) const {
         return it->second;
     }
     return 0;
-}
-
-std::vector<ItemID> StockManager::get_items(const RackID& rack_id, const FaceID& face_id) const {
-    std::vector<ItemID> items;
-    
-    try {
-        const auto& face_items = inventory_.at(rack_id).at(face_id);
-        items.reserve(face_items.size());
-        for (const auto& [item_id, quantity] : face_items) {
-            items.push_back(item_id);
-        }
-    } catch (const std::out_of_range&) {
-        // Return empty vector if rack/face not found
-    }
-    
-    return items;
-}
-
-std::vector<RackID> StockManager::get_racks() const {
-    std::vector<RackID> racks;
-    racks.reserve(inventory_.size());
-    
-    for (const auto& [rack_id, rack_data] : inventory_) {
-        racks.push_back(rack_id);
-    }
-    
-    return racks;
 }
 
 } // namespace SS

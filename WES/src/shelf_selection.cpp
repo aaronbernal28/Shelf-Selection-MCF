@@ -12,7 +12,13 @@
 namespace SS {
 // Contructor
 ShelfSelection::ShelfSelection(StockManager& stock)
-    : stock_(stock), rack_tibios_max_(0) {}
+    : stock_(stock), rack_tibios_max_(0) {
+    int rack_size = stock_.get_racks().size();
+    int warm_racks_limit = static_cast<int>(0.2 * rack_size);
+    
+    warm_racks_ = std::set<RackID>{};
+    hot_racks_ = std::set<RackID>{};
+}
 
 Taskpool ShelfSelection::run(const std::vector<Order>& orders, Taskpool& pending, const int& N) {
     // Implementation of the main shelf selection algorithm
@@ -22,7 +28,7 @@ Taskpool ShelfSelection::run(const std::vector<Order>& orders, Taskpool& pending
     for (const auto& [rack_id, faces] : pending) {
         for (const auto& [face_id, orders] : faces) {
             covered_orders += orders.size();
-            set_rack_warm(rack_id);
+            hot_racks_.insert(rack_id);
         }
     }
 
@@ -116,9 +122,9 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
             for (const auto& item_id : items) {
                 int quantity = stock_.get_item_quantity(rack_id, face_id, item_id);
                 int cost;
-                if (rack_is_hot(rack_id)) {
+                if (stock_.rack_is_hot(rack_id)) {
                     cost = -5;
-                } else if (rack_is_warm(rack_id)) {
+                } else if (stock_.rack_is_warm(rack_id)) {
                     cost = -3;
                 } else {
                     cost = -1;
@@ -169,9 +175,24 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
             // Add to taskpool
             taskpool[rack_id][face_id].push_back(order_id);
             set_rack_warm(rack_id);
+
+            // Update stock quantities
+            stock_.set_item_quantity(rack_id, face_id, order_id, -1);
         }
     }
-
+    reset_hot_racks();
     return taskpool;
 }
+
+ShelfSelection::set_rack_warm(const RackID& rack_id) {
+    warm_racks_.insert(rack_id);
+    if (warm_racks_.size() > warm_racks_limit) {
+        // Move the oldest warm rack to hot racks
+        RackID oldest_rack = warm_racks_.front();
+        warm_racks_.erase(warm_racks_.begin());
+    }
+}
+
+ShelfSelection::reset_hot_racks() {
+    hot_racks_.clear();
 }

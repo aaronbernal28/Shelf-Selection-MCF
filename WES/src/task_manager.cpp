@@ -5,7 +5,10 @@
 
 namespace SS {
 
-TaskManager::TaskManager(int seed) : seed_(seed) {}
+TaskManager::TaskManager(int seed) : seed_(seed) {
+    dist1 = std::uniform_int_distribution<int>(0, 100);
+    dist2 = std::uniform_int_distribution<int>(1000, 2000);
+}
 
 Taskpool TaskManager::process_tasks(const Taskpool& taskpool) {
     /**
@@ -20,10 +23,8 @@ Taskpool TaskManager::process_tasks(const Taskpool& taskpool) {
     std::mt19937 rng(seed_);
     seed_ += 1; // Update seed for next call
 
-    std::uniform_int_distribution<int> dist(0, 100);
-    
     // Generate random K (number of pending tasks)
-    int K = dist(rng);
+    int K = dist1(rng);
     
     // Collect all keys (rack_id, face_id pairs) from taskpool
     std::vector<std::pair<RackID, FaceID>> keys;
@@ -49,4 +50,9 @@ Taskpool TaskManager::process_tasks(const Taskpool& taskpool) {
     return pending_taskpool;
 }
 
+int TaskManager::get_available_capacity() {
+    std::mt19937 rng(seed_);
+    seed_ += 1; // Update seed for next call
+    return dist2(rng);
+}
 } // namespace SS
