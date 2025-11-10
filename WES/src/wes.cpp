@@ -64,7 +64,7 @@ int main() {
                 order_manager.update_expired_orders(conn, simulation_date);
                 
                 // Fetch pending backlog from DB
-                std::vector<SS::Order> backlog = order_manager.get_backlog_from_db(conn);
+                std::vector<SS::Order> backlog = order_manager.get_backlog_from_db(conn, simulation_date);
                 std::cout << "  ├─ Pending orders: " << backlog.size() << std::endl;
                 
                 // Run shelf selector to get taskpool

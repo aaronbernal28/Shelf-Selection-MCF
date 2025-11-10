@@ -42,10 +42,29 @@ Shelf-Selection-MCF/
 
 Install on Ubuntu/Debian:
 ```bash
-sudo apt-get install build-essential cmake nlohmann-json3-dev libpq-dev libpqxx-dev pkg-config
+sudo apt-get install build-essential cmake nlohmann-json3-dev libpq-dev libpqxx-dev pkg-config zlib1g zlib1g-dev postgresql postgresql-contrib libabsl-dev libprotobuf-dev protobuf-compiler libre2-dev libeigen3-dev coinor-libclp-dev coinor-libcbc-dev
 ```
 
 ## Setup
+### 0. Install Google OR-Tools (C++):
+
+Download `or-tools_amd64_debian-12_cpp_v9.12.4544.tar.gz` from [or-tools releases](https://developers.google.com/optimization/install/cpp/binary_linux#debian).
+
+Navigate to the file location and extract:
+```bash
+sudo apt update
+sudo apt install -y build-essential cmake lsb-release
+sudo tar -zxf or-tools_amd64_debian-12_cpp_v9.12.4544.tar.gz -C /opt/
+```
+
+Navigate to the extracted folder and run:
+```bash
+cd /opt/or-tools_amd64_debian-12_cpp_v9.12.4544
+
+Test the installation:
+```bash
+sudo make run SOURCE=examples/basic_example/basic_example.cc
+```
 
 ### 1. Configure Environment
 Create a `.env` file based on `example.env` with your database credentials.

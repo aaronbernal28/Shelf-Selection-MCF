@@ -55,6 +55,14 @@ void OrderManager::update_expired_orders(pqxx::connection& conn, const TimePoint
     txn.commit();
 }
 
+void OrderManager::update_stock_out_orders(pqxx::connection& conn) {
+    // Implementation to update stock out orders in the database can be added here
+    /*
+    UPDATE backlog SET status = 'STOCK_OUT', closure_date = NOW()
+    WHERE STATUS = 'PENDING' AND item_id IN (list_of_stock_out_item_ids);
+    */
+}
+
 void OrderManager::update_completed_orders(pqxx::connection& conn, const Taskpool& taskpool) {
     pqxx::work txn(conn);
     TimePoint closure_time = std::chrono::system_clock::now();
@@ -68,17 +76,14 @@ void OrderManager::update_completed_orders(pqxx::connection& conn, const Taskpoo
         }
     }
     
-    // Use batch update with IN clause for better performance
+    // Update each order individually using parameterized queries to prevent SQL injection
     if (!order_ids.empty()) {
-        std::string order_list = "'" + order_ids[0] + "'";
-        for (size_t i = 1; i < order_ids.size(); i++) {
-            order_list += ", '" + order_ids[i] + "'";
+        for (const auto& order_id : order_ids) {
+            txn.exec_params(
+                "UPDATE backlog SET status = 'COMPLETED', closure_date = $1 WHERE order_id = $2",
+                closure_str, order_id
+            );
         }
-        
-        txn.exec(
-            "UPDATE backlog SET status = 'COMPLETED', closure_date = '" + closure_str + 
-            "' WHERE order_id IN (" + order_list + ")"
-        );
     }
     
     txn.commit();

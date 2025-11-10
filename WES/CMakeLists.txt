@@ -9,6 +9,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Find required packages
 find_package(PkgConfig REQUIRED)
 find_package(nlohmann_json 3.2.0 REQUIRED)
+
+# Find Protobuf using the module mode (Debian doesn't provide config files)
+find_package(Protobuf REQUIRED)
+
+set(ortools_DIR /opt/or-tools_x86_64_Debian-12_cpp_v9.12.4544/lib/cmake/ortools)
+find_package(ortools CONFIG REQUIRED)
 pkg_check_modules(PQXX REQUIRED libpqxx)
 
 # Include directories
@@ -31,6 +37,7 @@ add_library(wes_lib STATIC ${WES_SOURCES})
 target_link_libraries(wes_lib
     nlohmann_json::nlohmann_json
     ${PQXX_LIBRARIES}
+    ortools::ortools
 )
 
 # Create WES executable
@@ -39,4 +46,5 @@ target_link_libraries(wes
     wes_lib
     nlohmann_json::nlohmann_json
     ${PQXX_LIBRARIES}
+    ortools::ortools
 )

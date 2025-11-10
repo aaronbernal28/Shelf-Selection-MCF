@@ -15,7 +15,7 @@ namespace SS {
 class ShelfSelection {
 public:
     // Constructor
-    ShelfSelection(StockManager& stock): stock_(stock) {}
+    ShelfSelection(StockManager& stock);
     
     // Main method
     Taskpool run(const std::vector<Order>& orders, Taskpool& pending, const int& N);

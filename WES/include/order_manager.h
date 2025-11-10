@@ -6,6 +6,7 @@
 #include "types.h"
 #include "order.h"
 #include "db_connector.h"
+#include "stock.h"
 
 namespace SS {
 

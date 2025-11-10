@@ -90,6 +90,11 @@ void StockManager::set_item_quantity(const RackID& rack_id, const FaceID& face_i
     
     // Update total quantity
     items_quantity_[item_id] += quantity;
+
+    if (items_quantity_[item_id] <= 0) {
+        // If total quantity is zero or negative, mark as stock out
+        stock_out_items_.push_back(item_id);
+    }
 }
 
 int StockManager::get_total_quantity(const ItemID& item_id) const {

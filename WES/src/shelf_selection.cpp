@@ -5,7 +5,12 @@
 #include <cstdint>
 #include <vector>
 #include <algorithm>
+#include <map>
+#include <string>
+#include <stdexcept>
+#include <cmath>
 #include "ortools/graph/min_cost_flow.h"
+#include "utils.h"
 
 namespace SS {
 // Constructor
@@ -43,6 +48,7 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
 
     std::set<ItemID> items;
     std::vector<std::string> nodes_names = {};
+    std::map<OrderID, ItemID> order_to_item; // Map to track which item each order needs
  
     // Generate a mapping of the nodes
     int node_index = 0;
@@ -60,6 +66,7 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
         node_index++;
         nodes_names.push_back(order.order_id);
         items.insert(order.item_id);
+        order_to_item[order.order_id] = order.item_id; // Store order-to-item mapping
     };
 
     // Rack_face nodes
@@ -121,9 +128,9 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
             for (const auto& item_id : items) {
                 int quantity = stock_.get_item_quantity(rack_id, face_id, item_id);
                 int cost;
-                if (stock_.rack_is_hot(rack_id)) {
+                if (stock_.is_rack_hot_[rack_id]) {
                     cost = -5;
-                } else if (stock_.rack_is_warm(rack_id)) {
+                } else if (stock_.is_rack_warm_[rack_id]) {
                     cost = -3;
                 } else {
                     cost = -1;
@@ -152,7 +159,9 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
     // Find the min cost flow.
     int status = min_cost_flow.Solve();
 
-    exception_if_not(status == operations_research::SimpleMinCostFlow::OPTIMAL, "Error: Solving the min cost flow problem failed.");
+    if (status != operations_research::SimpleMinCostFlow::OPTIMAL) {
+        throw std::runtime_error("Error: Solving the min cost flow problem failed.");
+    }
     
     // Extract the solution into taskpool
     Taskpool taskpool;
@@ -176,7 +185,8 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
             set_rack_warm(rack_id);
 
             // Update stock quantities
-            stock_.set_item_quantity(rack_id, face_id, order_id, -1);
+            ItemID item_id = order_to_item[order_id]; // Get the item_id for this order
+            stock_.set_item_quantity(rack_id, face_id, item_id, -1);
         }
     }
     reset_hot_racks();
