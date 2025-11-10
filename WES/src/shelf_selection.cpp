@@ -1,22 +1,20 @@
 #include "shelf_selection.h"
 #include <set>
+#include <deque>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-
-#include "absl/base/log_severity.h"
-#include "absl/log/globals.h"
-#include "ortools/base/init_google.h"
+#include <algorithm>
 #include "ortools/graph/min_cost_flow.h"
 
 namespace SS {
-// Contructor
+// Constructor
 ShelfSelection::ShelfSelection(StockManager& stock)
-    : stock_(stock), rack_tibios_max_(0) {
+    : stock_(stock) {
     int rack_size = stock_.get_racks().size();
-    int warm_racks_limit = static_cast<int>(0.2 * rack_size);
+    warm_racks_limit = static_cast<size_t>(0.2 * rack_size);
     
-    warm_racks_ = std::set<RackID>{};
+    warm_racks_ = std::deque<RackID>{};
     hot_racks_ = std::set<RackID>{};
 }
 
@@ -29,6 +27,7 @@ Taskpool ShelfSelection::run(const std::vector<Order>& orders, Taskpool& pending
         for (const auto& [face_id, orders] : faces) {
             covered_orders += orders.size();
             hot_racks_.insert(rack_id);
+            stock_.is_rack_hot_[rack_id] = true;
         }
     }
 
@@ -184,15 +183,23 @@ Taskpool ShelfSelection::solve_mcf(const std::vector<Order>& orders, const int& 
     return taskpool;
 }
 
-ShelfSelection::set_rack_warm(const RackID& rack_id) {
-    warm_racks_.insert(rack_id);
+void ShelfSelection::set_rack_warm(const RackID& rack_id) {
+    // Add rack to warm racks queue
+    warm_racks_.push_back(rack_id);
+    stock_.is_rack_warm_[rack_id] = true;
+
     if (warm_racks_.size() > warm_racks_limit) {
-        // Move the oldest warm rack to hot racks
+        // Remove the oldest warm rack
         RackID oldest_rack = warm_racks_.front();
-        warm_racks_.erase(warm_racks_.begin());
+        stock_.is_rack_warm_[oldest_rack] = false;
+        warm_racks_.pop_front();
     }
 }
 
-ShelfSelection::reset_hot_racks() {
+void ShelfSelection::reset_hot_racks() {
     hot_racks_.clear();
+    for (const auto& rack_id : stock_.get_racks()) {
+        stock_.is_rack_hot_[rack_id] = false;
+    }
 }
+} // namespace SS

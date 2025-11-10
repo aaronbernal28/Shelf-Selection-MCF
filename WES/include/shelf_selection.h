@@ -2,9 +2,10 @@
 #define SHELF_SELECTOR_H
 
 #include <vector>
+#include <deque>
+#include <set>
 #include "order.h"
 #include "stock.h"
-#include <set>
 
 namespace SS {
 
@@ -22,12 +23,16 @@ public:
     // MCF
     Taskpool solve_mcf(const std::vector<Order>& orders, const int& limit);
     
+    // Helper methods
+    void set_rack_warm(const RackID& rack_id);
+    void reset_hot_racks();
+    
 private:
     // Member variables
     StockManager& stock_;
-    std::vector<RackID> warm_racks_;
+    std::deque<RackID> warm_racks_;
     std::set<RackID> hot_racks_;
-    int warm_racks_limit;
+    size_t warm_racks_limit;
 };
 
 }
